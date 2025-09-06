@@ -16,7 +16,7 @@
 
 int main(int argc, char *argv[]) {
     bool verbose = false;
-    long skip_pages = 0;
+    long skip_pages = 1;  // Default to skipping 1 page
     const char *command = NULL;
     const char *input_file = NULL;
     const char *output_file = NULL;
@@ -201,14 +201,16 @@ int main(int argc, char *argv[]) {
                 }
             } else if (do_fixecc) {
                 if (num_err < 0) {
-                    // Check if ECC is all 0xFF or all 0x00
-                    bool all_ff = true, all_00 = true;
+                    // Check if ECC is all 0x00
+                    bool all_00 = true;
                     for (size_t i = 0; i < ECC_SIZE; i++) {
-                        if (recv_ecc[i] != 0xFF) all_ff = false;
-                        if (recv_ecc[i] != 0x00) all_00 = false;
+                        if (recv_ecc[i] != 0x00) {
+                            all_00 = false;
+                            break;
+                        }
                     }
-                    if (all_ff || all_00) {
-                        // Recalculate ECC for blocks with all-0xFF or all-0x00 ECC
+                    if (all_00) {
+                        // Recalculate ECC for blocks with all-0x00 ECC
                         uint8_t new_ecc[ECC_SIZE];
                         memset(new_ecc, 0, ECC_SIZE);
                         bch_encode(bch, inverted_data, DATA_SIZE, new_ecc);
@@ -219,11 +221,11 @@ int main(int argc, char *argv[]) {
                         }
                         fwrite(new_ecc, 1, ECC_SIZE, fout);
                         if (verbose) {
-                            fprintf(stderr, "Recalculated ECC (was all %s) at offset 0x%zx (page %zu, block %d)\n",
-                                    all_ff ? "0xFF" : "0x00", block_offset, pages_read + skip_pages, b);
+                            fprintf(stderr, "Recalculated ECC (was all 0x00) at offset 0x%zx (page %zu, block %d)\n",
+                                    block_offset, pages_read + skip_pages, b);
                         }
                     } else {
-                        // Uncorrectable and ECC not all 0xFF or 0x00, write original block unchanged
+                        // Uncorrectable and ECC not all 0x00, write original block unchanged
                         if (verbose) {
                             fprintf(stderr, "Uncorrectable error at offset 0x%zx (page %zu, block %d), writing unchanged\n",
                                     block_offset, pages_read + skip_pages, b);
