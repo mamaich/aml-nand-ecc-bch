@@ -17,7 +17,7 @@ fixecc - пересчитать ECC на основании данных фай�
 
 Вывод на экран:  
 Uncorrectable error at offset 0x0 (page 1, block 0)  
-...
+...  
 Correctable 1 bit errors at offset 0x1fb78430 (page 122271, block 3)  
 Number of erroneous blocks: 3287  
 Number of erroneous bits: 1750  
