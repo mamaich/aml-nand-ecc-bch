@@ -201,12 +201,35 @@ int main(int argc, char *argv[]) {
                 }
             } else if (do_fixecc) {
                 if (num_err < 0) {
-                    // Uncorrectable, write original block unchanged
-                    if (verbose) {
-                        fprintf(stderr, "Uncorrectable error at offset 0x%zx (page %zu, block %d), writing unchanged\n",
-                                block_offset, pages_read + skip_pages, b);
+                    // Check if ECC is all 0xFF or all 0x00
+                    bool all_ff = true, all_00 = true;
+                    for (size_t i = 0; i < ECC_SIZE; i++) {
+                        if (recv_ecc[i] != 0xFF) all_ff = false;
+                        if (recv_ecc[i] != 0x00) all_00 = false;
                     }
-                    fwrite(block, 1, BLOCK_SIZE, fout);
+                    if (all_ff || all_00) {
+                        // Recalculate ECC for blocks with all-0xFF or all-0x00 ECC
+                        uint8_t new_ecc[ECC_SIZE];
+                        memset(new_ecc, 0, ECC_SIZE);
+                        bch_encode(bch, inverted_data, DATA_SIZE, new_ecc);
+                        // Write original data + inverted new ECC
+                        fwrite(data, 1, DATA_SIZE, fout);
+                        for (size_t i = 0; i < ECC_SIZE; i++) {
+                            new_ecc[i] = ~new_ecc[i];
+                        }
+                        fwrite(new_ecc, 1, ECC_SIZE, fout);
+                        if (verbose) {
+                            fprintf(stderr, "Recalculated ECC (was all %s) at offset 0x%zx (page %zu, block %d)\n",
+                                    all_ff ? "0xFF" : "0x00", block_offset, pages_read + skip_pages, b);
+                        }
+                    } else {
+                        // Uncorrectable and ECC not all 0xFF or 0x00, write original block unchanged
+                        if (verbose) {
+                            fprintf(stderr, "Uncorrectable error at offset 0x%zx (page %zu, block %d), writing unchanged\n",
+                                    block_offset, pages_read + skip_pages, b);
+                        }
+                        fwrite(block, 1, BLOCK_SIZE, fout);
+                    }
                 } else {
                     // Compute new ECC on inverted data
                     uint8_t new_ecc[ECC_SIZE];
