@@ -16,7 +16,7 @@
 
 int main(int argc, char *argv[]) {
     bool verbose = false;
-    long skip_pages = 1;  // Default to skipping 1 page
+    long skip_pages = 0;  // Default to skipping 0 pages
     const char *command = NULL;
     const char *input_file = NULL;
     const char *output_file = NULL;
