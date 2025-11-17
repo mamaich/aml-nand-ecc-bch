@@ -14,6 +14,14 @@
 #define BLOCKS_PER_PAGE 8
 #define MAX_ERRORS 8  // t=8
 
+// ECC of all zeroes block, use as magic
+uint8_t seq[ECC_SIZE] = {
+  0xD8, 0x26, 0x44, 0x65,
+  0x7F, 0x2F, 0x2B, 0x97,
+  0x1B, 0x6C, 0x53, 0x3A,
+  0x99, 0x9E
+};
+
 int main(int argc, char *argv[]) {
     bool verbose = false;
     long skip_pages = 0;  // Default to skipping 0 pages
@@ -200,11 +208,11 @@ int main(int argc, char *argv[]) {
                     fwrite(block, 1, BLOCK_SIZE, fout);
                 }
             } else if (do_fixecc) {
-                if (num_err < 0) {
+                if (num_err != 0) {
                     // Check if ECC is all 0x00
                     bool all_00 = true;
                     for (size_t i = 0; i < ECC_SIZE; i++) {
-                        if (recv_ecc[i] != 0x00) {
+                        if (recv_ecc[i] != seq[i]) {
                             all_00 = false;
                             break;
                         }
@@ -221,7 +229,7 @@ int main(int argc, char *argv[]) {
                         }
                         fwrite(new_ecc, 1, ECC_SIZE, fout);
                         if (verbose) {
-                            fprintf(stderr, "Recalculated ECC (was all 0x00) at offset 0x%zx (page %zu, block %d)\n",
+                            fprintf(stderr, "Recalculated ECC (was ecc of all 0x00) at offset 0x%zx (page %zu, block %d)\n",
                                     block_offset, pages_read + skip_pages, b);
                         }
                     } else {
