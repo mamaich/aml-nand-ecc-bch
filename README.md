@@ -42,7 +42,7 @@ Uncorrectable error обязательно будут в первой стран
 
 Рекомендация по использованию:  
 1. Считать дамп программатором  
-2. Поправить в дампе ошибки, корректируемые ECC: ./ecc_fix -v dump.bin dump_fixed.bin  
+2. Поправить в дампе ошибки, корректируемые ECC: ./ecc_fix -v fixdata dump.bin dump_fixed.bin  
 3. Внести свои изменения в dump_fixed.bin, не забываем поправить байты ECC для измененного блока!   
-4. Пересчитать ECC: ./ecc_fix -v dump_fixed.bin dump_to_write.bin  
+4. Пересчитать ECC: ./ecc_fix -v fixecc dump_fixed.bin dump_to_write.bin  
 5. Записать dump_to_write.bin программатором  
