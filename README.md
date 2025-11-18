@@ -5,7 +5,7 @@
 Сборка:  
 gcc main.c bch.c -o ecc_fix  
 
-Использование: ecc_fix [-v] [-skip N] <command> <input_file> [output_file]  
+Использование: ./ecc_fix [-v] [-skip N] \<command\> \<input_file\> [output_file]  
 Команды: check, fixdata, fixecc   
 
 -v - verbose режим, выдает на экран адреса блоков с ошибками.  
