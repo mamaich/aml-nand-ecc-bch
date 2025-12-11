@@ -6,13 +6,20 @@
 #include <errno.h>
 #include "bch.h"
 
-#define PAGE_SIZE 4352
-#define BLOCK_SIZE 528
+// Common ECC parameters
 #define DATA_SIZE 514
 #define ECC_SIZE 14
+#define BLOCK_SIZE ((DATA_SIZE)+(ECC_SIZE))
+#define MAX_ERRORS 8  
+
+// NAND-specific parameters
+#define PAGE_SIZE_4K 4352
+#define PAGE_SIZE_2K 2176
 #define SPARE_SIZE 128
-#define BLOCKS_PER_PAGE 8
-#define MAX_ERRORS 8  // t=8
+#define BLOCKS_PER_PAGE (((PAGE_SIZE)-(SPARE_SIZE))/(BLOCK_SIZE))
+
+int PAGE_SIZE=0;
+
 
 // ECC of all zeroes block, use as magic
 uint8_t seq[ECC_SIZE] = {
@@ -28,12 +35,19 @@ int main(int argc, char *argv[]) {
     const char *command = NULL;
     const char *input_file = NULL;
     const char *output_file = NULL;
+    bool is2k=false, is4k=false;
 
     // Parse arguments
     int arg_index = 1;
     while (arg_index < argc && argv[arg_index][0] == '-') {
         if (strcmp(argv[arg_index], "-v") == 0) {
             verbose = true;
+            arg_index++;
+        } else if (strcmp(argv[arg_index], "-2") == 0) {
+            is2k = true;
+            arg_index++;
+        } else if (strcmp(argv[arg_index], "-4") == 0) {
+            is4k = true;
             arg_index++;
         } else if (strcmp(argv[arg_index], "-skip") == 0) {
             if (arg_index + 1 >= argc) {
@@ -54,10 +68,25 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc < arg_index + 2) {
-        fprintf(stderr, "Usage: %s [-v] [-skip N] <command> <input_file> [output_file]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-v] [-2 or -4] [-skip N] <command> <input_file> [output_file]\n", argv[0]);
         fprintf(stderr, "Commands: check, fixdata, fixecc\n");
         return 1;
     }
+
+    if(is2k && is4k) {
+        fprintf(stderr, "Error: both -2 and -4 specified\n");
+        return 1;
+    }
+
+    if(!is2k && !is4k) {
+        fprintf(stderr, "Error: no flash page size specified (no -2 or -4 parameter)\n");
+        return 1;
+    }
+
+    if(is2k)
+	PAGE_SIZE=PAGE_SIZE_2K;
+    if(is4k)
+	PAGE_SIZE=PAGE_SIZE_4K;
 
     command = argv[arg_index];
     input_file = argv[arg_index + 1];
