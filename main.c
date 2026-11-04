@@ -15,7 +15,8 @@
 // NAND-specific parameters
 #define PAGE_SIZE_4K 4352
 #define PAGE_SIZE_2K 2176
-#define SPARE_SIZE 128
+// Unused spare after the 528-byte chunks: 2176 = 4*528 + 64, 4352 = 8*528 + 128
+#define SPARE_SIZE ((PAGE_SIZE)==(PAGE_SIZE_2K)?64:128)
 #define BLOCKS_PER_PAGE (((PAGE_SIZE)-(SPARE_SIZE))/(BLOCK_SIZE))
 
 int PAGE_SIZE=0;
